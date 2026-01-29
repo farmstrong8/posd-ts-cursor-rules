@@ -1,0 +1,1 @@
+# posd-ts-cursor-rules
