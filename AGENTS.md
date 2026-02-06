@@ -1,0 +1,351 @@
+# A Philosophy of Software Design -- React/React-Native
+
+These instructions apply when working with React, React-Native, and TypeScript code. They encode principles from "A Philosophy of Software Design" by John Ousterhout, adapted for the patterns and pitfalls specific to React development.
+
+---
+
+## Strategic Mindset
+
+Every design decision should reduce complexity. Complexity has three symptoms:
+
+- **Change amplification**: A simple change requires modifying many files/components
+- **Cognitive load**: A developer must understand too much to make a change safely
+- **Unknown unknowns**: It's not obvious what needs to change, or what might break
+
+Be strategic, not tactical. Don't just "make it work" -- make the system better.
+
+```tsx
+// BAD (tactical): copy-paste and tweak for a new screen
+// Creates change amplification -- now you maintain two copies
+const TeamMemberCard = ({ member }) => {
+  // 90% identical to UserCard with minor tweaks
+  return <View style={styles.card}>...</View>;
+};
+
+// GOOD (strategic): shared abstraction with clean interface
+const PersonCard = ({ name, avatar, subtitle, onPress }: PersonCardProps) => {
+  return <Pressable style={styles.card} onPress={onPress}>...</Pressable>;
+};
+```
+
+```typescript
+// BAD: silence TypeScript to move fast
+const response = await api.get(url) as any;
+
+// GOOD: proper types catch bugs at compile time
+const response = await api.get<PaginatedResponse<User>>(url);
+```
+
+When you feel pressure to "just make it work," that's the moment to pause and design.
+
+---
+
+## Deep Modules
+
+A deep module does a lot behind a simple interface. A shallow module has a complex interface relative to its functionality. Always aim for depth.
+
+### Depth in Hooks
+
+```typescript
+// DEEP: simple interface, complex internals (tokens, refresh, storage, errors)
+const { user, login, logout, isLoading } = useAuth();
+
+// SHALLOW: complex interface for trivial behavior
+const value = useLocalStorage(key, serializer, deserializer, validator, defaultValue, onError);
+```
+
+### Information Hiding
+
+Don't leak implementation decisions through your interface. Consumers should not know which libraries you use internally.
+
+```typescript
+// BAD: leaks React Query
+function useUser(id: string): { queryResult: UseQueryResult<User> } { ... }
+
+// GOOD: consumer has no idea how data is fetched
+function useUser(id: string): { user: User | null; isLoading: boolean; error: string | null } { ... }
+```
+
+```tsx
+// BAD: leaks animation library into props
+<CollapsibleSection animationDriver={new Animated.Value(0)} />
+
+// GOOD: component owns its animation internals
+<CollapsibleSection isExpanded={isExpanded} />
+```
+
+### Generality
+
+Build somewhat general-purpose interfaces even for specific use cases. They're simpler and more reusable.
+
+```typescript
+// BAD: married to one screen
+const users = useFetchUsersForTeamPage();
+
+// GOOD: works anywhere users are needed
+const users = useUsers({ role: 'team-member', status: 'active' });
+```
+
+### Pull Complexity Downward
+
+The module should handle its own complexity. Don't push edge cases to the caller.
+
+```tsx
+// BAD: parent manages formatting, validation, masking
+<Input value={value} onChange={onChange} validate={validate} formatOnBlur={format} parseOnFocus={parse} />
+
+// GOOD: all complexity handled internally
+<PhoneInput value={phone} onChange={setPhone} />
+```
+
+---
+
+## React Component Structure
+
+### Single Responsibility
+
+One component = one job. If you describe it with "and," split it.
+
+### Composition Over Configuration
+
+```tsx
+// BAD: god-component configured via props
+<Card header={title} body={content} footer={actions} showBorder variant="outlined" />
+
+// GOOD: composed from focused parts
+<Card>
+  <CardHeader>{title}</CardHeader>
+  <CardBody>{content}</CardBody>
+</Card>
+```
+
+### Meaningful Layers
+
+Each component should transform the abstraction level. Pass-through components add complexity for zero value.
+
+```tsx
+// BAD: forwards the same props it received (pass-through)
+const UserCard = ({ name, avatar, subtitle, onPress, style, testID }: Props) => (
+  <Card name={name} avatar={avatar} subtitle={subtitle} onPress={onPress} style={style} testID={testID} />
+);
+
+// GOOD: transforms a domain object into a visual representation
+const UserCard = ({ user, onPress }: { user: User; onPress: () => void }) => (
+  <Card name={user.fullName} avatar={user.avatarUrl} subtitle={user.role} onPress={onPress} />
+);
+```
+
+### Re-Render-Aware Design
+
+Structure components so re-renders are naturally contained. Don't rely on memoization to fix structural problems.
+
+- **Split at state boundaries**: If only part of a component uses some state, extract the stateful part so the rest doesn't re-render.
+- **Push state down**: If state is only used in a subtree, move it there instead of the parent.
+- **Children as props**: Parent state changes don't re-render `children` passed from above.
+
+```tsx
+// BAD: entire component re-renders when count changes, including ExpensiveList
+const Screen = () => {
+  const [count, setCount] = useState(0);
+  return (
+    <View>
+      <Counter count={count} onIncrement={() => setCount(c => c + 1)} />
+      <ExpensiveList items={items} />
+    </View>
+  );
+};
+
+// GOOD: extract stateful part -- ExpensiveList unaffected
+const Screen = () => (
+  <View>
+    <CounterSection />
+    <ExpensiveList items={items} />
+  </View>
+);
+```
+
+- **No inline objects/functions in JSX**: New reference every render = child re-renders every time.
+
+```tsx
+// BAD: new object and function every render
+<UserList style={{ flex: 1 }} onSelect={(user) => navigate(user.id)} />
+
+// GOOD: stable references
+const listStyle = useMemo(() => ({ flex: 1 }), []);
+const handleSelect = useCallback((user: User) => navigate(user.id), [navigate]);
+<UserList style={listStyle} onSelect={handleSelect} />
+```
+
+### Hook Design
+
+- One hook = one responsibility. Don't combine auth + analytics + navigation.
+- Return stable references: memoize callbacks and objects so consumers don't re-render.
+- Use `useRef` for values that persist across renders but should NOT trigger re-renders.
+- Handle cleanup: effects must clean up subscriptions, timers, and listeners.
+
+### Separate Logic from UI
+
+Extract business logic into pure functions. Hooks glue React to the logic. Test the pure logic independently.
+
+```typescript
+// Pure logic -- easy to test, no React dependency
+export function calculateDiscount(cart: CartItem[], coupon?: Coupon): number { ... }
+
+// Hook -- thin glue layer
+export function useCartTotal(cart: CartItem[], coupon?: Coupon) {
+  return useMemo(() => calculateDiscount(cart, coupon), [cart, coupon]);
+}
+```
+
+If you can't render a component without mocking 5 things, it has too many dependencies.
+
+---
+
+## State & Types
+
+### State Placement
+
+Choose the simplest approach that works. State placement directly affects re-renders.
+
+- **`useState`** -- default. Keep state as close to where it's used as possible. State placed too high re-renders the entire subtree unnecessarily.
+- **Lifted state** -- when siblings need the same state, lift to their nearest common parent. Stop there.
+- **Context** -- genuinely app-wide concerns only (auth, theme, locale). NOT to avoid 2 levels of prop drilling. Any context value change re-renders ALL consumers -- split contexts by update frequency and memoize values.
+- **External store** (Zustand, Redux, etc.) -- complex shared state with frequent updates across distant components. Use selectors so components subscribe to only the slice they need.
+- **URL state** -- state that should survive refresh or be shareable (filters, pagination, selected tab).
+
+### Derived State
+
+If you can compute it from existing state or props, do not store it. Storing derived values means syncing them via `useEffect`, which causes extra render cycles and bugs.
+
+```typescript
+// BAD: stored derived state, synced with useEffect
+const [fullName, setFullName] = useState('');
+useEffect(() => {
+  setFullName(`${firstName} ${lastName}`);
+}, [firstName, lastName]);
+
+// GOOD: computed inline -- always in sync, no extra renders
+const fullName = `${firstName} ${lastName}`;
+```
+
+### Define Errors Out of Existence
+
+Use TypeScript's type system to make illegal states unrepresentable.
+
+```typescript
+// BAD: allows impossible combinations
+type State = {
+  isLoading: boolean;
+  data: User | null;
+  error: Error | null;
+};
+
+// GOOD: each state is distinct
+type State =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: User }
+  | { status: 'error'; error: Error };
+```
+
+```tsx
+// BAD: conflicting props accepted
+<Button isDisabled onPress={handlePress} label="Submit" />
+
+// GOOD: discriminated props prevent conflicts
+type ButtonProps =
+  | { variant: 'interactive'; onPress: () => void; label: string }
+  | { variant: 'disabled'; label: string };
+```
+
+If you're syncing state between two sources via `useEffect`, the state boundary is wrong. Derive the value, lift the state, or restructure ownership.
+
+---
+
+## Readability & Conventions
+
+### Naming
+
+- **Components**: PascalCase noun -- `UserProfile`, not `RenderUser`
+- **Hooks**: `use` + what it provides -- `useAuth`, not `useData`
+- **Handlers**: `handle` + event -- `handleSubmit`, not `doThing`
+- **Callback props**: `on` + event -- `onPress`, `onSubmit`, `onChange`
+- **Booleans**: `is`/`has`/`should` prefix -- `isVisible`, not `visible`
+- **Avoid vague names**: `data`, `info`, `item`, `value`, `handler` -- name what it actually IS
+
+```typescript
+// BAD
+const data = useData();
+const handleClick = () => { ... };
+
+// GOOD
+const { notifications, markAsRead } = useNotifications();
+const handleNotificationPress = (id: string) => { ... };
+```
+
+### Comments
+
+Explain WHY, not WHAT. The code shows what -- comments should add what you can't get from reading the code.
+
+- Document the "contract" of a component (what context does it assume?)
+- Document non-obvious hook dependencies and cleanup
+- Document why a state management approach was chosen
+- JSDoc on exported props interfaces (= API docs)
+
+```typescript
+// BAD: restates the code
+// Set loading to true
+setIsLoading(true);
+
+// GOOD: explains WHY
+// Optimistically update UI before the API call completes.
+// If the call fails, we revert in the catch block.
+setItems(prevItems => prevItems.filter(i => i.id !== id));
+```
+
+### Consistency
+
+Before introducing a new pattern, check how the codebase already handles the same concern.
+
+- Match existing return shapes from hooks
+- Match existing naming conventions (`onPress` vs `onClick`)
+- Match existing file/folder structure
+- If an existing pattern is bad, propose changing it **everywhere** rather than creating a parallel approach
+
+---
+
+## Red Flags
+
+When you see these patterns, pause and consider restructuring.
+
+### Component Complexity
+- Component over ~150 lines -- extract logic into hooks or split into sub-components
+- More than ~5 props -- consider composition (children/slots) instead
+- 3+ conditional render branches -- split into separate focused components
+- Business logic in the component body -- extract to a custom hook or pure function
+
+### State Problems
+- Multiple `useState` for related state -- use `useReducer` or custom hook
+- `useEffect` syncing state from props or other state -- wrong boundary; derive or restructure
+- Storing derived state -- compute it instead
+- Prop drilling through 3+ levels -- use context or rethink component boundaries
+
+### Re-Render Issues
+- Inline `{{ }}` objects or `() => {}` functions in JSX props -- new reference every render
+- `useEffect` running every render -- unstable dependency (object/array created in render)
+- Context provider value not memoized -- re-renders all consumers
+- Component reads large context but uses one field -- split context or use selectors
+- `useMemo`/`useCallback` everywhere -- the structure is wrong; restructure instead
+
+### Abstraction Problems
+- Pass-through component forwarding props with no transformation -- remove the layer
+- Hook wrapping another hook with no added logic -- the abstraction adds no value
+- Barrel file re-exporting everything -- pass-through adding no value
+- `any` or `as` type assertions -- fix the types instead
+- Name includes consumer context (`useFetchUsersForTeamPage`) -- too specific, generalize
+
+### Hook Smells
+- Many `useEffect` calls -- doing too many things; split into focused hooks
+- `useEffect` with many dependencies -- too broad; break up
+- No cleanup for subscriptions, timers, listeners -- memory leaks and stale closures
+- Returning new `{ ... }` object every render -- defeats downstream memoization
