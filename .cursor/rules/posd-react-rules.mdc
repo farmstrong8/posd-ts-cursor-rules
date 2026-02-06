@@ -1,6 +1,12 @@
+---
+description: Core design principles for React/React-Native TypeScript based on "A Philosophy of Software Design" by John Ousterhout. Guides component design, hook patterns, state management, re-render awareness, and complexity reduction.
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
+alwaysApply: false
+---
+
 # A Philosophy of Software Design -- React/React-Native
 
-These instructions apply when working with React, React-Native, and TypeScript code. They encode principles from "A Philosophy of Software Design" by John Ousterhout, adapted for the patterns and pitfalls specific to React development.
+These principles apply when working with React, React-Native, and TypeScript code. They encode "A Philosophy of Software Design" by John Ousterhout, adapted for the patterns and pitfalls specific to React development.
 
 ---
 

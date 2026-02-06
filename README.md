@@ -12,17 +12,17 @@ These teach AI agents to think strategically about complexity -- designing deep 
 2. Navigate to **Rules & Command** > **Project Rules** > **Add Rule** > **Remote Rule (GitHub)**
 3. Enter: `https://github.com/farmstrong8/posd-ts-cursor-rules.git`
 
-The `AGENTS.md` rules are automatically applied. Skills are auto-discovered and used by the agent when your questions match their descriptions.
+The rule in `.cursor/rules/` is synced as a project rule and applied when working with `.ts`, `.tsx`, `.js`, `.jsx` files. The skills in `skills/` are loaded as agent-decided rules and activated when Cursor determines they're relevant.
 
 ### Manual
 
-Copy `AGENTS.md` into your project root. Copy the `skills/` directory into your project.
+Copy `.cursor/rules/posd-react-rules.mdc` into your project's `.cursor/rules/` directory. Optionally copy the `skills/` directory into your project for the workflow skills.
 
 ## What's Included
 
-### AGENTS.md -- Rules
+### Project Rule -- `.cursor/rules/posd-react-rules.mdc`
 
-All rules live in a single `AGENTS.md` file. They cover 6 areas:
+Core design principles applied to React/RN, covering 6 areas:
 
 | Section | What it covers |
 |---------|---------------|
@@ -33,9 +33,9 @@ All rules live in a single `AGENTS.md` file. They cover 6 areas:
 | **Readability & Conventions** | Naming conventions. Meaningful comments. Codebase consistency. |
 | **Red Flags** | Anti-pattern checklist: component size, prop count, state problems, re-render issues, abstraction smells, hook smells. |
 
-### Skills -- Active Workflows
+### Agent Skills -- `skills/`
 
-3 skills for design, review, and refactoring tasks.
+3 workflow skills activated by Cursor when relevant to your request:
 
 | Skill | When it activates |
 |-------|------------------|
