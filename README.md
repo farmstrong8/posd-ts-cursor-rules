@@ -1,8 +1,8 @@
-# POSD React/React-Native Cursor Rules
+# POSD TypeScript Cursor Rules
 
-Cursor rules and agent skills that apply principles from **"A Philosophy of Software Design"** by John Ousterhout to React and React-Native TypeScript development.
+Cursor rules that apply principles from **"A Philosophy of Software Design"** by John Ousterhout to TypeScript development -- both React/React-Native frontend and Node.js backend.
 
-These teach AI agents to think strategically about complexity -- designing deep components, hiding information behind clean interfaces, structuring state correctly, and catching anti-patterns before they compound.
+These teach AI agents to think strategically about complexity -- designing deep modules, hiding information behind clean interfaces, structuring state and errors correctly, and catching anti-patterns before they compound.
 
 ## Installation
 
@@ -12,36 +12,35 @@ These teach AI agents to think strategically about complexity -- designing deep 
 2. Navigate to **Rules & Command** > **Project Rules** > **Add Rule** > **Remote Rule (GitHub)**
 3. Enter: `https://github.com/farmstrong8/posd-ts-cursor-rules.git`
 
-The rule in `.cursor/rules/` is synced as a project rule and applied when working with `.ts`, `.tsx`, `.js`, `.jsx` files. The skills in `skills/` are loaded as agent-decided rules and activated when Cursor determines they're relevant.
+The rules are loaded as agent-decided rules -- Cursor applies the relevant one based on context (React work vs Node/backend work).
 
 ### Manual
 
-Copy `.cursor/rules/posd-react-rules.mdc` into your project's `.cursor/rules/` directory. Optionally copy the `skills/` directory into your project for the workflow skills.
+Copy the relevant `SKILL.md` into your project's `.cursor/skills/` directory, or paste its contents into a `.cursor/rules/` file.
 
 ## What's Included
 
-### Project Rule -- `.cursor/rules/posd-react-rules.mdc`
-
-Core design principles applied to React/RN, covering 6 areas:
+### React / React-Native -- `skills/posd-react-rules/SKILL.md`
 
 | Section | What it covers |
 |---------|---------------|
-| **Strategic Mindset** | Complexity symptoms (change amplification, cognitive load, unknown unknowns). Strategic vs tactical programming. |
-| **Deep Modules** | Simple interfaces hiding significant complexity. Information hiding. Generality. Pulling complexity downward. |
-| **React Component Structure** | Single responsibility. Composition over configuration. Meaningful layers. Re-render-aware design. Hook patterns. |
-| **State & Types** | State placement and re-render impact. Derived state. Discriminated unions. Making illegal states unrepresentable. |
+| **Strategic Mindset** | Complexity symptoms. Strategic vs tactical. Never use `any`. |
+| **Deep Modules** | Simple interfaces hiding complexity. Information hiding. Generality. Pulling complexity downward. |
+| **React Component Structure** | Single responsibility. Composition. Meaningful layers. Re-render-aware design. Hook patterns. |
+| **State & Types** | State placement and re-render impact. Derived state. Discriminated unions. Illegal states. |
 | **Readability & Conventions** | Naming conventions. Meaningful comments. Codebase consistency. |
-| **Red Flags** | Anti-pattern checklist: component size, prop count, state problems, re-render issues, abstraction smells, hook smells. |
+| **Red Flags** | Anti-pattern checklist: component size, props, state, re-renders, abstractions, hooks. |
 
-### Agent Skills -- `skills/`
+### TypeScript / Node.js -- `skills/posd-node-rules/SKILL.md`
 
-3 workflow skills activated by Cursor when relevant to your request:
-
-| Skill | When it activates |
-|-------|------------------|
-| **posd-design-review** | When you ask the agent to review code, evaluate a PR, or assess quality. Produces structured findings with severity levels. |
-| **posd-refactoring** | When you ask to refactor, simplify, or reduce complexity. Identifies anti-patterns and proposes incremental before/after changes. |
-| **posd-component-design** | When you ask to design a new component, hook, or feature. Walks through interface-first design with two alternatives and tradeoff analysis. |
+| Section | What it covers |
+|---------|---------------|
+| **Strategic Mindset** | Complexity symptoms. Strategic vs tactical. Never use `any`. |
+| **Deep Modules** | Deep services and repositories. Information hiding. Generality. Pulling complexity downward. |
+| **Module & Service Structure** | Single responsibility. Meaningful layers. Dependency injection. |
+| **Error Handling** | Define errors out of existence. Result types. Typed error classes. |
+| **Readability & Conventions** | Naming conventions. Meaningful comments. Codebase consistency. |
+| **Red Flags** | Anti-pattern checklist: module size, abstractions, error handling, dependencies, data flow. |
 
 ## Philosophy
 
@@ -51,13 +50,11 @@ These rules are grounded in Ousterhout's core insight: **complexity is the root 
 - **Cognitive load** -- you must understand too much to make a change safely
 - **Unknown unknowns** -- it's not obvious what needs to change or what might break
 
-Every rule and skill is designed to reduce one or more of these symptoms in the context of React/React-Native development.
-
 This is opinionated guidance, not dogma. The principles are strong defaults -- break them deliberately when you have a clear reason.
 
 ## Attribution
 
-Based on *A Philosophy of Software Design* by John Ousterhout. These rules are an interpretation of the book's principles applied to React/React-Native TypeScript. Read the book for the full framework.
+Based on *A Philosophy of Software Design* by John Ousterhout. Read the book for the full framework.
 
 ## License
 

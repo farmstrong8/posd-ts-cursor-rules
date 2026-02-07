@@ -1,7 +1,6 @@
 ---
-description: Core design principles for React/React-Native TypeScript based on "A Philosophy of Software Design" by John Ousterhout. Guides component design, hook patterns, state management, re-render awareness, and complexity reduction.
-globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
-alwaysApply: false
+name: posd-react-rules
+description: Core design principles for React/React-Native TypeScript development based on "A Philosophy of Software Design" by John Ousterhout. Apply when writing, reviewing, refactoring, or designing React components, hooks, state management, or TypeScript code.
 ---
 
 # A Philosophy of Software Design -- React/React-Native
@@ -42,13 +41,38 @@ const response = await api.get(url) as any;
 const response = await api.get<PaginatedResponse<User>>(url);
 ```
 
-When you feel pressure to "just make it work," that's the moment to pause and design.
+### Never Use `any`
+
+Using `any` defeats the entire purpose of TypeScript. It hides bugs, breaks autocomplete, and creates unknown unknowns. There is always a better option:
+
+- **Import the type** from the package if it exists
+- **Create the type yourself** if the package doesn't export one
+- **Use generics** if the type needs to be flexible and reusable
+- **Use `unknown`** if you truly don't know the type, then narrow it with type guards
+
+```typescript
+// BAD: any hides the problem
+function processResponse(data: any) { ... }
+
+// GOOD: use a generic when the type varies
+function processResponse<T>(data: T): ProcessedResult<T> { ... }
+
+// GOOD: use unknown + type guard when type is truly unknown
+function parseInput(raw: unknown): Config {
+  if (!isValidConfig(raw)) throw new ValidationError('Invalid config');
+  return raw;
+}
+```
+
+When you feel pressure to "just make it work," that's the moment to pause and design. When refactoring, work incrementally -- each step should be independently shippable.
 
 ---
 
 ## Deep Modules
 
 A deep module does a lot behind a simple interface. A shallow module has a complex interface relative to its functionality. Always aim for depth.
+
+When designing new components or hooks, consider at least two interface alternatives and evaluate their tradeoffs in terms of depth, generality, and information hiding.
 
 ### Depth in Hooks
 
@@ -322,7 +346,7 @@ Before introducing a new pattern, check how the codebase already handles the sam
 
 ## Red Flags
 
-When you see these patterns, pause and consider restructuring.
+When you see these patterns, pause and consider restructuring. When reviewing code, focus on structural issues that affect complexity -- don't nitpick thin utility wrappers or adapter components that serve a deliberate purpose.
 
 ### Component Complexity
 - Component over ~150 lines -- extract logic into hooks or split into sub-components
@@ -347,7 +371,8 @@ When you see these patterns, pause and consider restructuring.
 - Pass-through component forwarding props with no transformation -- remove the layer
 - Hook wrapping another hook with no added logic -- the abstraction adds no value
 - Barrel file re-exporting everything -- pass-through adding no value
-- `any` or `as` type assertions -- fix the types instead
+- `any` anywhere -- import the type, create it, or use a generic. Use `unknown` with type guards if truly unknown. Never `any`.
+- `as` type assertions -- fix the types properly instead of casting
 - Name includes consumer context (`useFetchUsersForTeamPage`) -- too specific, generalize
 
 ### Hook Smells
